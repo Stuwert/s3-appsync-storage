@@ -8,6 +8,8 @@ https://gist.github.com/wulfmann/82649af0d9fa7a0049ff8dd1440291e4
 
 I saw this CDK setup and I figured it would be possible to replicate with some tweaks to actually Query the data directly from S3.
 
+[If you want a longer form writeup about the experience, you can find it here](https://www.urback.net/posts/hooking-up-aws-appsync-to-s3-in-6-hours-ish/)
+
 ### Implementation Steps
 
 [x] Uploading a simple file to S3
