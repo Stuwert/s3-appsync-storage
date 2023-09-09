@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  GraphQLAPI:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: my-graphql-api
+      AuthenticationType: API_KEY
+      ApiType: GRAPHQL
+      LogConfig:
+        CloudWatchLogsRoleArn: !GetAtt GraphQLLogRole.Arn
+        FieldLogLevel: ALL
+
+  GraphQLAPIKey:
+    Type: AWS::AppSync::ApiKey
+    Properties:
+      ApiId: !GetAtt GraphQLAPI.ApiId
+
+  ServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:SelectObjectContent
+                Resource: arn:aws:s3:::not-real/*
+
+  GraphQLLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: "*"
+
+  GraphQLSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId: !GetAtt GraphQLAPI.ApiId
+      DefinitionS3Location: "schema.graphql"
+
+  BucketDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      Type: HTTP
+      ApiId: !GetAtt GraphQLAPI.ApiId
+      Name: BucketWithJSONSource
+      ServiceRoleArn: !GetAtt ServiceRole.Arn
+      HttpConfig:
+        Endpoint: https://not-real.s3.us-east-1.amazonaws.com
+        AuthorizationConfig:
+          AuthorizationType: AWS_IAM
+          AwsIamConfig:
+            SigningRegion: us-east-1
+            SigningServiceName: s3
+
+  BucketQueryResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      Kind: UNIT
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      ApiId: !GetAtt GraphQLAPI.ApiId
+      DataSourceName: !GetAtt BucketDataSource.Name
+      FieldName: characterName
+      TypeName: Query
+      CodeS3Location: getNameComplex.js
+
+  BucketSimpleResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      Kind: UNIT
+      Runtime:
+        Name: APPSYNC_JS
+        RuntimeVersion: 1.0.0
+      ApiId: !GetAtt GraphQLAPI.ApiId
+      DataSourceName: !GetAtt BucketDataSource.Name
+      FieldName: characterNameSlow
+      TypeName: Query
+      CodeS3Location: getNameSimple.js

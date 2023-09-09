@@ -1,0 +1,4 @@
+type Query {
+  characterName(id: ID!): String!
+  characterNameSlow(id: ID!): String!
+}

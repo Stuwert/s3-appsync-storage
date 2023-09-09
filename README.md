@@ -4,6 +4,10 @@ I was talking with a coworker about implementation patterns for some simple conf
 
 The basic idea here is S3 storing a simple JSON file using a uuid and some data, and seeing how easy it is to implement things like querying using S3.
 
+https://gist.github.com/wulfmann/82649af0d9fa7a0049ff8dd1440291e4
+
+I saw this CDK setup and I figured it would be possible to replicate with some tweaks to actually Query the data directly from S3.
+
 ### Implementation Steps
 
 [x] Uploading a simple file to S3
@@ -30,4 +34,48 @@ I was able to extrapolate it into a query that would give me the one specific th
 SELECT s.name FROM S3Object[*].records[*] AS s WHERE s.id = 'd9c9e7f6-8d3d-4a5d-9d3c-1b7e3c8a8c1a';
 ```
 
-The one takeaway I noted here however is that I would have
+The one takeaway I noted here however is that I would have to actually grab the name from the response as the response is an object.
+
+```
+{
+  name: "Tess"
+}
+```
+
+## Goal 2: Requesting Data From S3
+
+So I set up a basic template with the following components:
+
+- Resolver
+- DataSource
+- GraphqlApi
+- Schema
+- Policy
+
+To connect the pieces. I started by hardcoding all of the things because I didn't want to deal with
+
+At first I tried a pretty basic GET Method passing in the body, until I realized that absolutely wasn't working. So I re-ran the request in the test environment on AWS and copied the request body.
+
+```
+export function request(context) {
+  return {
+    method: "GET",
+    params: {
+      body: `SELECT s.name FROM S3Object[*].records[*] AS s WHERE s.id = '${context.arguments.id}';`,
+    },
+    resourcePath: "/storage.json",
+  };
+}
+```
+
+When I started debugging the issues after copying the work together, I learned that my Appsync function wasn't generating logs because it didn't have the correct permissions to generate groups.
+
+During this process I also spent way too long fighting the Authorization parameters to actually access the bucket, until I re-reviewed some of the work I was referencing to realize there's an authorization config setting I was not using.
+
+I got it functional!
+
+The extra snafu was that the response object was a Buffered string, and Appsync resolvers don't actually have any tools to automatically parse a buffered string, so I had to get a little hacky with how I actually grabbed the result.
+
+I was also somewhat disappointed with the speed. I was hoping for better than 200ms response times. <300ms certainly isn't bad, but it's not blazing fast, and I was hoping for slightly better.
+
+## Bonus: Implementing A Generic Grabber and then Loading
