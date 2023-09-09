@@ -14,7 +14,7 @@ I saw this CDK setup and I figured it would be possible to replicate with some t
 [x] Using S3 Querying to collect data from that file
 [x] Implementing Appsync with an HTTP DataSource
 [x] Adding Querying via the data source
-[] Creating and uploading a file to S3 from the same Appsync Template
+[x] Creating and uploading a file to S3 from the same Appsync Template
 
 ## Goal 1: Uploading File and Querying
 
