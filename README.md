@@ -12,8 +12,8 @@ I saw this CDK setup and I figured it would be possible to replicate with some t
 
 [x] Uploading a simple file to S3
 [x] Using S3 Querying to collect data from that file
-[] Implementing Appsync with an HTTP DataSource
-[] Adding Querying via the data source
+[x] Implementing Appsync with an HTTP DataSource
+[x] Adding Querying via the data source
 [] Creating and uploading a file to S3 from the same Appsync Template
 
 ## Goal 1: Uploading File and Querying
@@ -79,3 +79,13 @@ The extra snafu was that the response object was a Buffered string, and Appsync 
 I was also somewhat disappointed with the speed. I was hoping for better than 200ms response times. <300ms certainly isn't bad, but it's not blazing fast, and I was hoping for slightly better.
 
 ## Bonus: Implementing A Generic Grabber and then Loading
+
+I also added the basic `getNameSimple.js` to show an example of loading the entire JSON file into memory and then looping over it and returning the result. Given the relatively similar speeds and the simplicity of the code being written, I would probably lean towards that in production situations.
+
+## Goal 3: Upload to S3
+
+I did a bit more research, and I'm not going to go through all of the steps here to upload the file to s3.
+
+I would probably use this Github Action: https://github.com/marketplace/actions/upload-s3 to manually upload the file. If it's versioned, the configuration in AWS will manage all of the stuff like updating the access, and it's up to you at that point whether or not controlling the files via version control in Git is also useful.
+
+What I have done however, is create an S3 bucket configuration that implicitly connects the pieces to the various resources, instead of hardcoding variables.

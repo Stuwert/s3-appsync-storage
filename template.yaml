@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Resources:
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: name-storage-bucket
+      VersioningConfiguration:
+        Status: Enabled
+
   GraphQLAPI:
     Type: AWS::AppSync::GraphQLApi
     Properties:
@@ -36,7 +43,7 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:SelectObjectContent
-                Resource: arn:aws:s3:::not-real/*
+                Resource: !GetAtt StorageBucket.Arn
 
   GraphQLLogRole:
     Type: AWS::IAM::Role
@@ -75,12 +82,12 @@ Resources:
       Name: BucketWithJSONSource
       ServiceRoleArn: !GetAtt ServiceRole.Arn
       HttpConfig:
-        Endpoint: https://not-real.s3.us-east-1.amazonaws.com
-        AuthorizationConfig:
+        Endpoint: !GetAtt StorageBucket.WebsiteURL
+        AuthorizationConfig: # For this config to work, a ServiceRoleArn must be defined, otherwise a `The validated string is empty` will get thrown and you will be confused, like I was, for hours.
           AuthorizationType: AWS_IAM
-          AwsIamConfig:
+          AwsIamConfig: # AWS Documentation says these aren't required, but they are if you're setting Authorization Type.
             SigningRegion: us-east-1
-            SigningServiceName: s3
+            SigningServiceName: s3 # This is the name of the resource being accessed. If you're contacting a resource you've named, you'll go with that, over the generic Amazon Name.
 
   BucketQueryResolver:
     Type: AWS::AppSync::Resolver

@@ -1,5 +1,4 @@
-export function request(context) {
-  console.log("hits request");
+export function request() {
   return {
     resourcePath: "/storage.json",
     method: "GET",
@@ -7,10 +6,11 @@ export function request(context) {
 }
 
 export function response(context) {
-  console.log("hits response");
-  console.log(context.result);
-  /**
-   * I need this from the object
-   */
-  return "It is a string";
+  const parsedResult = JSON.parse(context.result.body);
+
+  const character = parsedResult.records.find(
+    (record) => record.id === context.arguments.id
+  );
+
+  return character.name;
 }
